@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#060708" />
+    <title>Take a breather</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <button class="icon-button" id="backButton" type="button" aria-label="Back to Olymptrade">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
+        </button>
+
+        <div class="brand" aria-label="Olymptrade">
+          <img src="./assets/olymptrade-logo.png" alt="" />
+        </div>
+
+        <div class="topbar-actions">
+          <button class="icon-button" id="resetButton" type="button" aria-label="Reset all bubbles">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+          </button>
+          <button class="icon-button sound-button" id="soundButton" type="button" aria-label="Turn sound off" aria-pressed="true">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+              <path class="sound-on" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />
+              <path class="sound-off" d="m18 9 4 4m0-4-4 4" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <section class="intro" aria-labelledby="pageTitle">
+        <h1 id="pageTitle">Take a breather</h1>
+      </section>
+
+      <section class="play-area" aria-label="Bubble wrap">
+        <div class="mascot" id="mascot" aria-hidden="true">
+          <img src="./assets/triangles-mascot-waving.png" alt="" />
+        </div>
+        <div class="bubble-wrap" id="bubbleGrid" role="group" aria-label="63 bubbles to pop"></div>
+      </section>
+
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
