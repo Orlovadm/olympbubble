@@ -239,8 +239,14 @@ button { font: inherit; }
 
 @media (max-width: 520px) {
   .app-shell { padding-left: 12px; padding-right: 12px; }
-  .bubble-wrap { column-gap: 3px; }
-  .bubble { max-width: 56px; }
+  .bubble-wrap {
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: 70px;
+    column-gap: 3px;
+    row-gap: 10px;
+  }
+  .bubble { max-width: 70px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
