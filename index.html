@@ -125,11 +125,42 @@ button { font: inherit; }
   width: 100%;
   flex: 1;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bubble-row {
+  width: 100%;
+  height: 70px;
+  flex: 0 0 70px;
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: repeat(9, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
-  gap: clamp(7px, 2.1vw, 11px);
+  column-gap: 3px;
+  transition: height .42s ease, flex-basis .42s ease, opacity .3s ease, transform .42s ease;
+  transform-origin: center;
+}
+
+.bubble-row.partial-row {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.bubble-row.partial-row .bubble:first-child { grid-column: 2; }
+
+.bubble-row.clearing {
+  height: 0;
+  flex-basis: 0;
+  opacity: 0;
+  transform: scaleY(.25);
+  pointer-events: none;
+}
+
+.bubble-row.cleared { display: none; }
+
+.bubble-row.clearing .bubble {
+  animation: row-clear .46s cubic-bezier(.2,.8,.25,1) forwards;
+  animation-delay: calc(var(--column-index) * 35ms);
 }
 
 .bubble {
@@ -137,7 +168,7 @@ button { font: inherit; }
   z-index: 1;
   min-width: 0;
   width: 100%;
-  max-width: 54px;
+  max-width: 70px;
   aspect-ratio: 1;
   justify-self: center;
   padding: 0;
@@ -188,7 +219,7 @@ button { font: inherit; }
 
 .bubble:active:not(.popped) { transform: scale(.92); }
 .bubble.popped {
-  animation: pop .38s cubic-bezier(.15,.9,.3,1) forwards;
+  animation: pop .3s cubic-bezier(.15,.9,.3,1) forwards;
   pointer-events: none;
 }
 .bubble.restoring { animation: restore .38s cubic-bezier(.15,.9,.3,1.2) both; }
@@ -205,9 +236,13 @@ button { font: inherit; }
 
 @keyframes pop {
   0% { transform: scale(1); }
-  30% { transform: scale(1.08); filter: brightness(1.28); opacity: 1; }
-  62% { transform: scale(.7); filter: brightness(1.08) blur(.4px); opacity: .72; }
-  100% { transform: scale(.05); filter: blur(1px); opacity: 0; }
+  45% { transform: scale(1.06); filter: brightness(1.24); }
+  100% { transform: scale(.82); filter: brightness(.55) saturate(.55); opacity: .42; }
+}
+@keyframes row-clear {
+  0% { transform: scale(.82); opacity: .42; }
+  45% { transform: scale(1.06); filter: brightness(1.4); opacity: .86; }
+  100% { transform: scale(.15); filter: blur(2px); opacity: 0; }
 }
 @keyframes restore { 0% { transform: scale(.7); opacity: .15; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 @keyframes particle { to { transform: translate(var(--x), var(--y)) scale(0); opacity: 0; } }
@@ -239,14 +274,6 @@ button { font: inherit; }
 
 @media (max-width: 520px) {
   .app-shell { padding-left: 12px; padding-right: 12px; }
-  .bubble-wrap {
-    grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: none;
-    grid-auto-rows: 70px;
-    column-gap: 3px;
-    row-gap: 10px;
-  }
-  .bubble { max-width: 70px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -298,6 +325,7 @@ button { font: inherit; }
 
     <script>
 const BUBBLE_COUNT = 63;
+const BUBBLES_PER_ROW = 5;
 const grid = document.querySelector('#bubbleGrid');
 const mascot = document.querySelector('#mascot');
 const resetButton = document.querySelector('#resetButton');
@@ -332,6 +360,8 @@ function makeBubble(index) {
   button.type = 'button';
   button.className = `bubble color-${colorVariants[index]}`;
   button.dataset.index = String(index);
+  button.dataset.row = String(Math.floor(index / BUBBLES_PER_ROW));
+  button.style.setProperty('--column-index', String(index % BUBBLES_PER_ROW));
   button.setAttribute('aria-label', `Pop bubble ${index + 1}`);
   button.addEventListener('click', () => popBubble(button));
   return button;
@@ -363,9 +393,7 @@ function positionMascot() {
 
 function randomizeMascotSpot() {
   mascot.classList.remove('found');
-  const row = 1 + Math.floor(Math.random() * 7);
-  const column = 1 + Math.floor(Math.random() * 5);
-  mascotBubbleIndex = row * 7 + column;
+  mascotBubbleIndex = Math.floor(Math.random() * BUBBLE_COUNT);
   requestAnimationFrame(positionMascot);
 }
 
@@ -399,6 +427,21 @@ function celebrateIfComplete() {
   }
 }
 
+function clearCompletedRow(rowIndex) {
+  const row = grid.querySelector(`.bubble-row[data-row="${rowIndex}"]`);
+  if (!row || row.classList.contains('clearing') || row.classList.contains('cleared')) return;
+
+  const rowBubbles = [...row.querySelectorAll('.bubble')];
+  if (!rowBubbles.every((bubble) => bubble.classList.contains('popped'))) return;
+
+  row.classList.add('clearing');
+  window.setTimeout(() => {
+    row.classList.remove('clearing');
+    row.classList.add('cleared');
+    row.setAttribute('aria-hidden', 'true');
+  }, 560);
+}
+
 function popBubble(bubble) {
   if (bubble.classList.contains('popped')) return;
   bubble.classList.add('popped');
@@ -413,12 +456,18 @@ function popBubble(bubble) {
     void mascot.offsetWidth;
     mascot.classList.add('found');
   }
+  clearCompletedRow(Number(bubble.dataset.row));
   celebrateIfComplete();
 }
 
 function resetBubbles() {
   const bubbles = [...grid.querySelectorAll('.bubble')];
+  const rows = [...grid.querySelectorAll('.bubble-row')];
   poppedCount = 0;
+  rows.forEach((row) => {
+    row.classList.remove('clearing', 'cleared');
+    row.removeAttribute('aria-hidden');
+  });
   randomizeColors();
   randomizeMascotSpot();
   bubbles.forEach((bubble, index) => {
@@ -443,7 +492,20 @@ function closeWebView() {
   }
 }
 
-for (let i = 0; i < BUBBLE_COUNT; i += 1) grid.append(makeBubble(i));
+for (let rowIndex = 0; rowIndex < Math.ceil(BUBBLE_COUNT / BUBBLES_PER_ROW); rowIndex += 1) {
+  const row = document.createElement('div');
+  row.className = 'bubble-row';
+  row.dataset.row = String(rowIndex);
+
+  const firstIndex = rowIndex * BUBBLES_PER_ROW;
+  const bubblesInRow = Math.min(BUBBLES_PER_ROW, BUBBLE_COUNT - firstIndex);
+  if (bubblesInRow < BUBBLES_PER_ROW) row.classList.add('partial-row');
+
+  for (let columnIndex = 0; columnIndex < bubblesInRow; columnIndex += 1) {
+    row.append(makeBubble(firstIndex + columnIndex));
+  }
+  grid.append(row);
+}
 grid.append(mascot);
 randomizeMascotSpot();
 window.addEventListener('resize', positionMascot);
